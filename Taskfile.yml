@@ -1,0 +1,21 @@
+version: '3'
+
+tasks:
+  run:
+    desc: "Run the Go application"
+    cmds:
+      - air
+    silent: false
+
+  db:init:
+    desc: "Initialize the database using Docker Compose"
+    cmds:
+      - docker-compose up -d
+      - task: migrate
+    silent: false
+
+  migrate:
+    desc: "Run database migrations"
+    cmds:
+      - go run ./migration/main.go
+    silent: false
