@@ -13,7 +13,7 @@ func NewCourtRepo(db *gorm.DB) *CourtRepo {
 	return &CourtRepo{db: db}
 }
 
-func (m *CourtRepo) FindByID(id int) (court *model.Court, err error) {
+func (m *CourtRepo) FindByID(id string) (court *model.Court, err error) {
 	err = m.db.Find(&court, id).Error
 	return
 }

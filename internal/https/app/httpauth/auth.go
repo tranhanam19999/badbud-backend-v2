@@ -10,9 +10,8 @@ import (
 func RegisterHttpAuth(svc AuthService, e *echo.Group) {
 	h := HttpAuth{svc: svc}
 
-	e.GET("", h.login)
-	e.POST("", h.register)
-
+	e.POST("/login", h.login)
+	e.POST("/register", h.register)
 }
 
 func (h *HttpAuth) login(c echo.Context) error {

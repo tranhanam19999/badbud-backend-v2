@@ -1,9 +1,22 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/badbud-backend-v2/internal/common/ulidutil"
+	"gorm.io/gorm"
+)
 
 type Base struct {
-	ID        uint `gorm:"primaryKey"`
+	ID        string `gorm:"primaryKey"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+func (b *Base) BeforeCreate(tx *gorm.DB) (err error) {
+	if b.ID == "" {
+		b.ID = ulidutil.NewString()
+	}
+
+	return
 }

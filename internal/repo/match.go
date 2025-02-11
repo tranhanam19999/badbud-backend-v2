@@ -18,8 +18,8 @@ func (r *MatchRepo) Create(match *model.Match) error {
 	return r.db.Create(match).Error
 }
 
-func (r *MatchRepo) FindByID(id uint) (match *model.Match, err error) {
-	err = r.db.Find(&match, id).Error
+func (r *MatchRepo) FindByID(id string) (match *model.Match, err error) {
+	err = r.db.Preload("MatchParticipants").Find(&match, id).Error
 	return
 }
 
@@ -35,4 +35,34 @@ func (r *MatchRepo) List(page, limit int) (total int64, matches []*model.Match, 
 	}
 
 	return
+}
+
+func (r *MatchRepo) Update(values any, conds ...any) error {
+	err := r.db.Where(conds).Updates(values).Error
+	return err
+}
+
+// AppendParticipant adds a participant to a match
+func (r *MatchRepo) AddParticipant(matchId, userId string) error {
+	participant := &model.MatchParticipant{
+		MatchId: matchId,
+		UserId:  userId,
+	}
+
+	// Check if the participant already exists
+	var existing model.MatchParticipant
+	err := r.db.Where("match_id = ? AND user_id = ?", matchId, userId).First(&existing).Error
+	if err == nil {
+		return nil // Already exists, no need to insert
+	} else if err != gorm.ErrRecordNotFound {
+		return err
+	}
+
+	// Append participant
+	return r.db.Create(&participant).Error
+}
+
+// RemoveParticipant removes a participant from a match
+func (r *MatchRepo) RemoveParticipant(matchId, userId string) error {
+	return r.db.Where("match_id = ? AND user_id = ?", matchId, userId).Delete(&model.MatchParticipant{}).Error
 }

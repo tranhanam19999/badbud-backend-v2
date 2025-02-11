@@ -1,6 +1,9 @@
 package repo
 
-import "gorm.io/gorm"
+import (
+	"github.com/badbud-backend-v2/internal/model"
+	"gorm.io/gorm"
+)
 
 // Match Repository
 type MatchRequestRepo struct {
@@ -11,12 +14,16 @@ func NewMatchRequestRepo(db *gorm.DB) *MatchRequestRepo {
 	return &MatchRequestRepo{db: db}
 }
 
-// func (r *MatchRepo) CreateMatch(match *Match) error {
-// 	return r.db.Create(match).Error
-// }
+func (r *MatchRequestRepo) Create(matchReq *model.MatchRequest) error {
+	return r.db.Create(matchReq).Error
+}
 
-// func (r *MatchRepo) GetMatch(id uint) (*Match, error) {
-// 	var match Match
-// 	result := r.db.Preload("User").First(&match, id)
-// 	return &match, result.Error
-// }
+func (r *MatchRequestRepo) FindByID(id string) (matchRequest *model.MatchRequest, err error) {
+	err = r.db.Find(&matchRequest, id).Error
+	return
+}
+
+func (r *MatchRequestRepo) Update(values any, conds ...any) error {
+	err := r.db.Where(conds).Updates(values).Error
+	return err
+}

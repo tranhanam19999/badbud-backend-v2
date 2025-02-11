@@ -17,10 +17,12 @@ type ListMatchResp struct {
 }
 
 type CreateMatchReq struct {
-	CourtID   int
+	CourtID   string
+	CourtNum  int
 	Fee       FeeReq
 	StartTime time.Time
 	EndTime   time.Time
+	Limit     int
 }
 
 type FeeReq struct {

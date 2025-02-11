@@ -32,7 +32,7 @@ func (a *Auth) Login(ctx BDContext, input *dto.LoginReq) (*dto.LoginResp, error)
 		return nil, err
 	}
 
-	token, err := a.jwtService.GenerateToken(int(usr.ID), usr.Username)
+	token, err := a.jwtService.GenerateToken(usr.ID, usr.Username)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (a *Auth) Register(ctx BDContext, input *dto.RegisterReq) (*dto.RegisterRes
 		usr.Username = freshUser.Username
 	}
 
-	token, err := a.jwtService.GenerateToken(int(usr.ID), usr.Username)
+	token, err := a.jwtService.GenerateToken(usr.ID, usr.Username)
 	if err != nil {
 		return nil, err
 	}

@@ -4,8 +4,8 @@ type MatchRequestStatus string
 
 type MatchRequest struct {
 	Base
-	UserID  uint
-	MatchID uint
+	UserID  string
+	MatchID string
 	Status  MatchRequestStatus
 	User    User  `gorm:"foreignKey:UserID"`
 	Match   Match `gorm:"foreignKey:MatchID"`

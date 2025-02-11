@@ -19,6 +19,7 @@ func main() {
 	// repos := repo.NewRepository(db)
 
 	fmt.Println("Running migrations...")
-	db.AutoMigrate(&model.User{}, &model.Match{}, &model.MatchRequest{})
+	db.Exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
+	db.AutoMigrate(&model.User{}, &model.Match{}, &model.MatchRequest{}, &model.MatchParticipant{}, &model.Court{})
 	fmt.Println("Running migrations completed...")
 }

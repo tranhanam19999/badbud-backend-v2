@@ -54,22 +54,116 @@ func (m *Match) Create(ctx BDContext, req *dto.CreateMatchReq) error {
 
 	err = m.repos.Match.Create(&model.Match{
 		CourtID:   req.CourtID,
+		CourtNum:  req.CourtNum,
 		FeeMale:   req.Fee.Male,
 		FeeFemale: req.Fee.Female,
+		Limit:     req.Limit,
 	})
 
 	return err
 }
 
 func (m *Match) CreateMatchRequest(ctx BDContext, req *dto.CreateMatchRequestReq) error {
+	curMatch, err := m.repos.Match.FindByID(req.MatchId)
+	if err != nil {
+		return err
+	}
+
+	if len(curMatch.MatchParticipants)+1 > curMatch.Limit {
+		return errors.New("Participants limit exceeded")
+	}
+
+	// TODO: Check if requested user is banned, not verify email, otp,...
+
+	if err = m.repos.Transaction(func(tx *repo.Repository) error {
+		if err := tx.MatchRequest.Create(&model.MatchRequest{
+			UserID:  ctx.AuthUser().ID,
+			MatchID: req.MatchId,
+			Status:  model.MatchRequestStatusRequested,
+		}); err != nil {
+			return err
+		}
+
+		// TODO: Notification?
+		return nil
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }
 
+// Is for owner to accept the match request send by the player
 func (m *Match) AcceptMatchRequest(ctx BDContext, req *dto.AcceptMatchRequestReq) error {
-	return nil
+	matchRequest, err := m.repos.MatchRequest.FindByID(req.RequestId)
+	if err != nil {
+		return err
+	}
 
+	if matchRequest.Status != model.MatchRequestStatusRequested {
+		return errors.New("Invalid match request status")
+	}
+
+	match, err := m.repos.Match.FindByID(matchRequest.MatchID)
+	if err != nil {
+		return err
+	}
+
+	if err := m.repos.Transaction(func(txRepo *repo.Repository) error {
+		if err := txRepo.MatchRequest.Update(map[string]any{
+			"status": model.MatchRequestStatusAccepted,
+		}, "id = ?", req.RequestId); err != nil {
+			return err
+		}
+
+		if err := txRepo.Match.AddParticipant(matchRequest.MatchID, matchRequest.UserID); err != nil {
+			return err
+		}
+
+		// If after accept the limit execeeded -> Auto reject all other participant
+		// Plus 1 since we accepted the match request
+		if len(match.MatchParticipants)+1 == match.Limit {
+			// Auto reject all others match request
+			if err := txRepo.MatchRequest.Update(map[string]any{
+				"status": model.MatchRequestStatusRejected,
+			}, "court_id = ? AND court_num = ?", match.CourtID, match.CourtNum); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (m *Match) RejectMatchRequest(ctx BDContext, req *dto.RejectMatchRequestReq) error {
+	matchRequest, err := m.repos.MatchRequest.FindByID(req.RequestId)
+	if err != nil {
+		return err
+	}
+
+	if matchRequest.Status != model.MatchRequestStatusRequested {
+		return errors.New("Invalid match request status")
+	}
+
+	if err := m.repos.Transaction(func(txRepo *repo.Repository) error {
+		if err := txRepo.MatchRequest.Update(map[string]any{
+			"status": model.MatchRequestStatusAccepted,
+		}, "id = ?", req.RequestId); err != nil {
+			return err
+		}
+
+		if err := txRepo.Match.RemoveParticipant(matchRequest.MatchID, matchRequest.UserID); err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }
